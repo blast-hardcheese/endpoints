@@ -24,7 +24,9 @@ trait Endpoints extends algebra.Endpoints with Urls with Methods {
     * A function that takes the information `A` and the XMLHttpRequest
     * and sets up some headers on it.
     */
-  type RequestHeaders[A] = js.Function2[A, XMLHttpRequest, Unit]
+  implicit class RequestHeaders[A](value: js.Function2[A, XMLHttpRequest, Unit]) extends js.Function2[A, XMLHttpRequest, Unit] {
+    def apply(a: A, xhr: XMLHttpRequest): Unit = value.apply(a, xhr)
+  }
 
   /** Sets up no headers on the given XMLHttpRequest */
   lazy val emptyHeaders: RequestHeaders[Unit] = (_, _) => ()
