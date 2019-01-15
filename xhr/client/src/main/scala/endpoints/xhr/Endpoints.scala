@@ -36,12 +36,12 @@ trait Endpoints extends algebra.Endpoints with Urls with Methods {
     (valueOpt, xhr) => valueOpt.foreach(value => xhr.setRequestHeader(name, value))
 
   implicit lazy val reqHeadersInvFunctor: InvariantFunctor[RequestHeaders] = new InvariantFunctor[RequestHeaders] {
-    override def xmap[From, To](f: js.Function2[From, XMLHttpRequest, Unit], map: From => To, contramap: To => From): js.Function2[To, XMLHttpRequest, Unit] =
+    override def xmap[From, To](f: RequestHeaders[From], map: From => To, contramap: To => From): RequestHeaders[To] =
       (to, xhr) => f(contramap(to), xhr)
   }
 
   implicit lazy val reqHeadersSemigroupal: Semigroupal[RequestHeaders] = new Semigroupal[RequestHeaders]{
-    override def product[A, B](fa: js.Function2[A, XMLHttpRequest, Unit], fb: js.Function2[B, XMLHttpRequest, Unit])(implicit tupler: Tupler[A, B]): js.Function2[tupler.Out, XMLHttpRequest, Unit] =
+    override def product[A, B](fa: RequestHeaders[A], fb: RequestHeaders[B])(implicit tupler: Tupler[A, B]): RequestHeaders[tupler.Out] =
       (out, xhr) => {
         val (a, b) = tupler.unapply(out)
         fa(a, xhr)
