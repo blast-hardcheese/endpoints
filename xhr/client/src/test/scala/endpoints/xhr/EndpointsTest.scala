@@ -5,6 +5,7 @@ import org.scalatest.FreeSpec
 object Fixtures extends thenable.Endpoints {
   val foo = endpoint(get(path / "foo" / segment[String]()), emptyResponse())
   val bar = endpoint(post(path / "bar" /? qs[Int]("quux"), emptyRequest), emptyResponse())
+  val baz = endpoint(post(path / "baz" /? qs[Int]("quux"), emptyRequest), emptyResponse(), header("quuz") ++ header("corge") ++ header("grault"))
 }
 
 // TODO try to use traits defined in algebra tests.
