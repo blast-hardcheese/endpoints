@@ -7,6 +7,10 @@ import org.scalajs.dom.XMLHttpRequest
 import scala.language.higherKinds
 import scala.scalajs.js
 
+class RequestHeadersShim[A](val value: js.Function2[A, XMLHttpRequest, Unit]) extends AnyVal {
+  def apply(a: A, xhr: XMLHttpRequest): Unit = value.apply(a, xhr)
+}
+
 /**
   * Partial interpreter for [[algebra.Endpoints]] that builds a client issuing requests
   * using XMLHttpRequest.
@@ -24,31 +28,29 @@ trait Endpoints extends algebra.Endpoints with Urls with Methods {
     * A function that takes the information `A` and the XMLHttpRequest
     * and sets up some headers on it.
     */
-  implicit class RequestHeaders[A](value: js.Function2[A, XMLHttpRequest, Unit]) extends js.Function2[A, XMLHttpRequest, Unit] {
-    def apply(a: A, xhr: XMLHttpRequest): Unit = value.apply(a, xhr)
-  }
+  type RequestHeaders[A] = RequestHeadersShim[A]
 
   /** Sets up no headers on the given XMLHttpRequest */
-  lazy val emptyHeaders: RequestHeaders[Unit] = (_, _) => ()
+  lazy val emptyHeaders: RequestHeaders[Unit] = new RequestHeaders((_, _) => ())
 
   def header(name: String, docs: endpoints.algebra.Documentation): RequestHeaders[String] =
-    (value, xhr) => xhr.setRequestHeader(name, value)
+    new RequestHeaders((value, xhr) => xhr.setRequestHeader(name, value))
 
   def optHeader(name: String, docs: endpoints.algebra.Documentation): RequestHeaders[Option[String]] =
-    (valueOpt, xhr) => valueOpt.foreach(value => xhr.setRequestHeader(name, value))
+    new RequestHeaders((valueOpt, xhr) => valueOpt.foreach(value => xhr.setRequestHeader(name, value)))
 
   implicit lazy val reqHeadersInvFunctor: InvariantFunctor[RequestHeaders] = new InvariantFunctor[RequestHeaders] {
     override def xmap[From, To](f: RequestHeaders[From], map: From => To, contramap: To => From): RequestHeaders[To] =
-      (to, xhr) => f(contramap(to), xhr)
+      new RequestHeadersShim((to, xhr) => f(contramap(to), xhr))
   }
 
   implicit lazy val reqHeadersSemigroupal: Semigroupal[RequestHeaders] = new Semigroupal[RequestHeaders]{
     override def product[A, B](fa: RequestHeaders[A], fb: RequestHeaders[B])(implicit tupler: Tupler[A, B]): RequestHeaders[tupler.Out] =
-      (out, xhr) => {
+      new RequestHeadersShim((out, xhr) => {
         val (a, b) = tupler.unapply(out)
         fa(a, xhr)
         fb(b, xhr)
-      }
+      })
   }
 
   /**

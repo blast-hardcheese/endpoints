@@ -14,10 +14,10 @@ trait BasicAuthentication extends algebra.BasicAuthentication with Endpoints {
     * Supplies the credential into the request headers
     */
   private[endpoints] lazy val basicAuthenticationHeader: RequestHeaders[Credentials] =
-    (credentials, xhr) => {
+    new RequestHeadersShim((credentials, xhr) => {
       xhr.setRequestHeader("Authorization", "Basic " + btoa(credentials.username + ":" + credentials.password))
       ()
-    }
+    })
 
   /**
     * Checks that the result is not `Forbidden`
